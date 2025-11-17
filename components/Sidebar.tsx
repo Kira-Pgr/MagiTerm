@@ -113,7 +113,7 @@ export function Sidebar({
     suggestionAbortRef.current = abortController
 
     setIsGenerating(true)
-    setSuggestion({ command: '', explanation: '' })
+    setSuggestion(null)
 
     try {
       const response = await fetch('/api/ai/generate/stream', {
