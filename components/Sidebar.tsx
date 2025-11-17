@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
@@ -9,6 +9,64 @@ import { CodeHighlight } from './CodeHighlight'
 import { Sparkles, Info } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+
+type StreamEvent =
+  | { kind: 'delta'; data: { field: string; text: string } }
+  | { kind: 'result'; data?: Record<string, unknown> }
+  | { kind: 'error'; data?: { message?: string } }
+  | { kind: 'done'; data?: Record<string, unknown> }
+  | { kind: string; data?: Record<string, unknown> }
+
+async function readEventStream(response: Response, onEvent: (event: StreamEvent) => void) {
+  const reader = response.body?.getReader()
+  if (!reader) {
+    throw new Error('Missing response body')
+  }
+
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  const processBuffer = () => {
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary !== -1) {
+      const rawEvent = buffer.slice(0, boundary).replace(/\r/g, '')
+      buffer = buffer.slice(boundary + 2)
+      const dataLine = rawEvent
+        .split('\n')
+        .map((line) => line.trim())
+        .find((line) => line.startsWith('data:'))
+
+      if (dataLine) {
+        const payload = dataLine.slice(5).trim()
+        if (payload.length > 0) {
+          try {
+            onEvent(JSON.parse(payload))
+          } catch (error) {
+            console.error('Failed to parse stream payload', error, payload)
+          }
+        }
+      }
+
+      boundary = buffer.indexOf('\n\n')
+    }
+  }
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) {
+        buffer += decoder.decode()
+        processBuffer()
+        break
+      }
+
+      buffer += decoder.decode(value, { stream: true })
+      processBuffer()
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
 
 interface SidebarProps {
   sessionId: string
@@ -32,39 +90,86 @@ export function Sidebar({
     explanation: string
   } | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const suggestionAbortRef = useRef<AbortController | null>(null)
 
   // Explain tab state
   const [commandToExplain, setCommandToExplain] = useState('')
   const [explanation, setExplanation] = useState<string | null>(null)
   const [isExplaining, setIsExplaining] = useState(false)
+  const explainAbortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      suggestionAbortRef.current?.abort()
+      explainAbortRef.current?.abort()
+    }
+  }, [])
 
   const handleGenerate = async () => {
     if (!goal.trim()) return
 
+    suggestionAbortRef.current?.abort()
+    const abortController = new AbortController()
+    suggestionAbortRef.current = abortController
+
     setIsGenerating(true)
-    setSuggestion(null)
+    setSuggestion({ command: '', explanation: '' })
 
     try {
-      const response = await fetch('/api/graphql', {
+      const response = await fetch('/api/ai/generate/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: `
-            mutation Generate($sessionId: ID!, $os: String!, $cpu: String!, $gpu: String!, $goal: String!) {
-              generate(sessionId: $sessionId, os: $os, cpu: $cpu, gpu: $gpu, goal: $goal)
-            }
-          `,
-          variables: { sessionId, os, cpu, gpu, goal },
+          sessionId,
+          os,
+          cpu,
+          gpu,
+          goal,
         }),
+        signal: abortController.signal,
       })
 
-      const { data } = await response.json()
-      if (data?.generate) {
-        setSuggestion(data.generate)
+      if (!response.ok) {
+        throw new Error(`Generate request failed: ${response.status}`)
       }
+
+      await readEventStream(response, (event) => {
+        if (event.kind === 'delta') {
+          const field =
+            typeof event.data?.field === 'string' ? event.data.field : undefined
+          const text = typeof event.data?.text === 'string' ? event.data.text : ''
+          if (!field || !text) return
+
+          setSuggestion((prev) => {
+            const next = prev ?? { command: '', explanation: '' }
+            if (field === 'command') {
+              return { ...next, command: next.command + text }
+            }
+            if (field === 'explanation') {
+              return { ...next, explanation: next.explanation + text }
+            }
+            return next
+          })
+        } else if (event.kind === 'result') {
+          const data = event.data ?? {}
+          setSuggestion({
+            command: typeof data.command === 'string' ? data.command : '',
+            explanation: typeof data.explanation === 'string' ? data.explanation : '',
+          })
+        } else if (event.kind === 'error') {
+          throw new Error(event.data?.message ?? 'Unknown AI error')
+        }
+      })
     } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
       console.error('Generate error:', error)
+      setSuggestion(null)
     } finally {
+      if (suggestionAbortRef.current === abortController) {
+        suggestionAbortRef.current = null
+      }
       setIsGenerating(false)
     }
   }
@@ -81,36 +186,55 @@ export function Sidebar({
   const handleExplain = async () => {
     if (!commandToExplain.trim()) return
 
+    explainAbortRef.current?.abort()
+    const abortController = new AbortController()
+    explainAbortRef.current = abortController
+
     setIsExplaining(true)
-    setExplanation(null)
+    setExplanation('')
 
     try {
-      const response = await fetch('/api/graphql', {
+      const response = await fetch('/api/ai/explain/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: `
-            mutation Explain($sessionId: ID!, $os: String!, $cpu: String!, $gpu: String!, $command: String!) {
-              explain(sessionId: $sessionId, os: $os, cpu: $cpu, gpu: $gpu, command: $command)
-            }
-          `,
-          variables: {
-            sessionId,
-            os,
-            cpu,
-            gpu,
-            command: commandToExplain,
-          },
+          sessionId,
+          os,
+          cpu,
+          gpu,
+          command: commandToExplain,
         }),
+        signal: abortController.signal,
       })
 
-      const { data } = await response.json()
-      if (data?.explain) {
-        setExplanation(data.explain.explanation)
+      if (!response.ok) {
+        throw new Error(`Explain request failed: ${response.status}`)
       }
+
+      await readEventStream(response, (event) => {
+        if (event.kind === 'delta') {
+          const text = typeof event.data?.text === 'string' ? event.data.text : ''
+          if (!text) return
+          setExplanation((prev) => `${prev ?? ''}${text}`)
+        } else if (event.kind === 'result') {
+          const finalText = event.data?.explanation
+          if (typeof finalText === 'string') {
+            setExplanation(finalText)
+          }
+        } else if (event.kind === 'error') {
+          throw new Error(event.data?.message ?? 'Unknown AI error')
+        }
+      })
     } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
       console.error('Explain error:', error)
+      setExplanation(null)
     } finally {
+      if (explainAbortRef.current === abortController) {
+        explainAbortRef.current = null
+      }
       setIsExplaining(false)
     }
   }
