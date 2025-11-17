@@ -103,6 +103,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## TODO
 
-- [ ] Add streaming response for AI
+- [x] Add streaming response for AI
 - [ ] Add Email template
 - [ ] Improve UI/UX
