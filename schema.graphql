@@ -1,0 +1,72 @@
+scalar DateTime
+scalar JSON
+
+interface Node {
+  id: ID!
+}
+
+type UserProfile implements Node {
+  id: ID!
+  userId: String!
+  createdAt: DateTime!
+  sessions: [Session!]!
+}
+
+type Session implements Node {
+  id: ID!
+  userId: String!
+  os: String!
+  title: String!
+  seed: Int!
+  cpu: String!
+  gpu: String!
+  cwd: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  commands: [Command!]!
+  events: [SessionEvent!]!
+}
+
+type Command implements Node {
+  id: ID!
+  sessionId: String!
+  input: String!
+  output: String
+  tokensIn: Int!
+  tokensOut: Int!
+  latencyMs: Int!
+  createdAt: DateTime!
+  session: Session!
+}
+
+type SessionEvent implements Node {
+  id: ID!
+  sessionId: String!
+  kind: String!
+  data: JSON!
+  ts: DateTime!
+  session: Session!
+}
+
+type Query {
+  session(id: ID!): Session
+  me: UserProfile
+  node(id: ID!): Node
+}
+
+type Mutation {
+  createSession(
+    os: String!
+    title: String
+    seed: Int
+    cpu: String
+    gpu: String
+    cwd: String
+  ): Session!
+
+  runCommand(sessionId: ID!, input: String!): Command!
+
+  generate(sessionId: ID!, os: String!, cpu: String!, gpu: String!, goal: String!): JSON!
+
+  explain(sessionId: ID!, os: String!, cpu: String!, gpu: String!, command: String!): JSON!
+}

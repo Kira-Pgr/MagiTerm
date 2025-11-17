@@ -1,0 +1,201 @@
+{
+  "version": "0.1.0",
+  "name": "magiterm",
+  "dependencies": {
+    "@openai/agents": {
+      "version": "0.3.1",
+      "resolved": "https://registry.npmjs.org/@openai/agents/-/agents-0.3.1.tgz",
+      "overridden": false
+    },
+    "@prisma/client": {
+      "version": "6.19.0",
+      "resolved": "https://registry.npmjs.org/@prisma/client/-/client-6.19.0.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dropdown-menu": {
+      "version": "2.1.16",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dropdown-menu/-/react-dropdown-menu-2.1.16.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-icons": {
+      "version": "1.3.2",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-icons/-/react-icons-1.3.2.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-label": {
+      "version": "2.1.8",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-label/-/react-label-2.1.8.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-select": {
+      "version": "2.2.6",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-select/-/react-select-2.2.6.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-separator": {
+      "version": "1.1.8",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-separator/-/react-separator-1.1.8.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-slot": {
+      "version": "1.2.4",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-slot/-/react-slot-1.2.4.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-tabs": {
+      "version": "1.1.13",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-tabs/-/react-tabs-1.1.13.tgz",
+      "overridden": false
+    },
+    "@supabase/supabase-js": {
+      "version": "2.81.1",
+      "resolved": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.81.1.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "22.19.1",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-22.19.1.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "18.3.7",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-18.3.7.tgz",
+      "overridden": false
+    },
+    "@types/react-relay": {
+      "version": "16.0.6",
+      "resolved": "https://registry.npmjs.org/@types/react-relay/-/react-relay-16.0.6.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "18.3.26",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-18.3.26.tgz",
+      "overridden": false
+    },
+    "@types/relay-runtime": {
+      "version": "17.0.4",
+      "resolved": "https://registry.npmjs.org/@types/relay-runtime/-/relay-runtime-17.0.4.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.4.22",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.4.22.tgz",
+      "overridden": false
+    },
+    "babel-plugin-relay": {
+      "version": "18.2.0",
+      "resolved": "https://registry.npmjs.org/babel-plugin-relay/-/babel-plugin-relay-18.2.0.tgz",
+      "overridden": false
+    },
+    "class-variance-authority": {
+      "version": "0.7.1",
+      "resolved": "https://registry.npmjs.org/class-variance-authority/-/class-variance-authority-0.7.1.tgz",
+      "overridden": false
+    },
+    "clsx": {
+      "version": "2.1.1",
+      "resolved": "https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "14.2.21",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-14.2.21.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "8.57.1",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-8.57.1.tgz",
+      "overridden": false
+    },
+    "graphql-relay": {
+      "version": "0.10.2",
+      "resolved": "https://registry.npmjs.org/graphql-relay/-/graphql-relay-0.10.2.tgz",
+      "overridden": false
+    },
+    "graphql-yoga": {
+      "version": "5.16.2",
+      "resolved": "https://registry.npmjs.org/graphql-yoga/-/graphql-yoga-5.16.2.tgz",
+      "overridden": false
+    },
+    "graphql": {
+      "version": "16.12.0",
+      "resolved": "https://registry.npmjs.org/graphql/-/graphql-16.12.0.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "0.462.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-0.462.0.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "14.2.33",
+      "resolved": "https://registry.npmjs.org/next/-/next-14.2.33.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.6",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.6.tgz",
+      "overridden": false
+    },
+    "prisma": {
+      "version": "6.19.0",
+      "resolved": "https://registry.npmjs.org/prisma/-/prisma-6.19.0.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "18.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-18.3.1.tgz",
+      "overridden": false
+    },
+    "react-relay": {
+      "version": "18.2.0",
+      "resolved": "https://registry.npmjs.org/react-relay/-/react-relay-18.2.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "18.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-18.3.1.tgz",
+      "overridden": false
+    },
+    "relay-compiler": {
+      "version": "18.2.0",
+      "resolved": "https://registry.npmjs.org/relay-compiler/-/relay-compiler-18.2.0.tgz",
+      "overridden": false
+    },
+    "relay-runtime": {
+      "version": "18.2.0",
+      "resolved": "https://registry.npmjs.org/relay-runtime/-/relay-runtime-18.2.0.tgz",
+      "overridden": false
+    },
+    "shiki": {
+      "version": "1.29.2",
+      "resolved": "https://registry.npmjs.org/shiki/-/shiki-1.29.2.tgz",
+      "overridden": false
+    },
+    "tailwind-merge": {
+      "version": "2.6.0",
+      "resolved": "https://registry.npmjs.org/tailwind-merge/-/tailwind-merge-2.6.0.tgz",
+      "overridden": false
+    },
+    "tailwindcss-animate": {
+      "version": "1.0.7",
+      "resolved": "https://registry.npmjs.org/tailwindcss-animate/-/tailwindcss-animate-1.0.7.tgz",
+      "overridden": false
+    },
+    "tailwindcss": {
+      "version": "3.4.18",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.18.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  }
+}

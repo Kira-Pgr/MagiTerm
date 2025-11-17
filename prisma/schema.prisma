@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  sessions  TerminalSession[]
+
+  @@index([userId, createdAt])
+  @@map("user_profiles")
+}
+
+model TerminalSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  os        String   @default("ubuntu")
+  title     String   @default("New Session")
+  seed      Int      @default(0)
+  cpu       String   @default("Intel Xeon Silver")
+  gpu       String   @default("NVIDIA RTX 4090")
+  cwd       String   @default("/")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  commands  Command[]
+  events    TerminalEvent[]
+  profile   UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("terminal_sessions")
+}
+
+model Command {
+  id         String   @id @default(uuid()) @db.Uuid
+  sessionId  String   @map("session_id") @db.Uuid
+  input      String
+  output     String?
+  tokensIn   Int      @default(0) @map("tokens_in")
+  tokensOut  Int      @default(0) @map("tokens_out")
+  latencyMs  Int      @default(0) @map("latency_ms")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  session    TerminalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("commands")
+}
+
+model TerminalEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  kind      String
+  data      Json
+  ts        DateTime @default(now())
+
+  session   TerminalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, ts])
+  @@map("terminal_events")
+}

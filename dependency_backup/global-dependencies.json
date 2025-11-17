@@ -1,0 +1,21 @@
+{
+  "name": "lib",
+  "dependencies": {
+    "@anthropic-ai/claude-code": {
+      "version": "2.0.9",
+      "overridden": false
+    },
+    "@musistudio/claude-code-router": {
+      "version": "1.0.30",
+      "overridden": false
+    },
+    "corepack": {
+      "version": "0.32.0",
+      "overridden": false
+    },
+    "npm": {
+      "version": "10.8.2",
+      "overridden": false
+    }
+  }
+}
