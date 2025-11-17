@@ -42,7 +42,7 @@ MagiTerm is an AI-powered terminal simulator that allows you to execute commands
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/RecollectIQ/MagiTerm.git
+   git clone https://github.com/Kira-Pgr/MagiTerm.git
    cd MagiTerm
    ```
 
