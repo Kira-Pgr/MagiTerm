@@ -1,4 +1,13 @@
-import { Agent, RunContext, Runner, user, withTrace } from '@openai/agents'
+import {
+  Agent,
+  RunContext,
+  Runner,
+  RunRawModelStreamEvent,
+  StreamedRunResult,
+  user,
+  withTrace,
+} from '@openai/agents'
+import { JsonFieldStreamDecoder } from '@/lib/ai-streaming'
 import { z } from 'zod'
 import type { CommandHistoryEntry } from '@/lib/history'
 import type { AgentInputItem } from '@openai/agents'
@@ -17,11 +26,13 @@ export interface ExecuteParams extends AgentContext {
 export interface SuggestParams extends AgentContext {
   goal: string
   commandHistory?: CommandHistoryEntry[]
+  onStreamChunk?: (chunk: string) => void | Promise<void>
 }
 
 export interface ExplainParams extends AgentContext {
   command: string
   commandHistory?: CommandHistoryEntry[]
+  onStreamChunk?: (chunk: string) => void | Promise<void>
 }
 
 interface MagitermExecuteContext {
@@ -267,46 +278,75 @@ export async function* runExecute(
 
   try {
     const runner = createRunner()
-    const result = await withTrace('magiterm.execute', async () =>
+    const streamResult = await withTrace('magiterm.execute', async () =>
       runner.run(
         magitermExecute,
         buildConversationMessages(params.commandHistory, params.input),
         {
           context: buildContext(params),
+          stream: true,
         }
       )
     )
 
-    const usage = result.rawResponses.at(-1)?.usage
+    let streamedText = ''
+    let emittedChunks = 0
+    const parsedDeltas: string[] = []
+    const outputParser = new JsonFieldStreamDecoder('output', {
+      onDelta: ({ delta }) => {
+        if (delta.length > 0) {
+          parsedDeltas.push(delta)
+        }
+      },
+    })
 
-    const agentOutput = result.finalOutput?.output
-
-    if (agentOutput === undefined || agentOutput === null) {
-      throw new Error('Agent result is undefined')
-    }
-
-    const rawOutput = agentOutput
-    const normalizedOutput =
-      rawOutput.length === 0
-        ? '\n'
-        : rawOutput.endsWith('\n')
-          ? rawOutput
-          : `${rawOutput}\n`
-
-    if (normalizedOutput.length > 0) {
-      yield {
-        kind: 'token' as const,
-        data: { text: normalizedOutput },
+    for await (const event of streamResult) {
+      if (
+        event instanceof RunRawModelStreamEvent &&
+        event.data.type === 'output_text_delta'
+      ) {
+        const delta = event.data.delta
+        if (!delta) continue
+        outputParser.processChunk(delta)
+        while (parsedDeltas.length > 0) {
+          const deltaText = parsedDeltas.shift()!
+          streamedText += deltaText
+          emittedChunks += 1
+          yield {
+            kind: 'token' as const,
+            data: { text: deltaText },
+          }
+        }
       }
     }
+
+    await streamResult.completed
+
+    if (emittedChunks === 0) {
+      const fallback = '\n'
+      streamedText += fallback
+      yield {
+        kind: 'token' as const,
+        data: { text: fallback },
+      }
+    } else if (!streamedText.endsWith('\n')) {
+      const newline = '\n'
+      streamedText += newline
+      yield {
+        kind: 'token' as const,
+        data: { text: newline },
+      }
+    }
+
+    const usage = streamResult.rawResponses.at(-1)?.usage
 
     yield {
       kind: 'status' as const,
       data: {
         message: 'Complete',
         exitCode: 0,
-          tokensIn: usage?.inputTokens ?? 0,
-          tokensOut: usage?.outputTokens ?? 0,
+        tokensIn: usage?.inputTokens ?? 0,
+        tokensOut: usage?.outputTokens ?? 0,
       },
     }
   } catch (error) {
@@ -346,10 +386,42 @@ const createAgentRunResult = <TOutput>(
   }
 }
 
+async function streamRunText<TContext>(
+  result: StreamedRunResult<TContext, Agent<TContext, any>>,
+  onChunk: (chunk: string) => void | Promise<void>
+) {
+  for await (const event of result) {
+    if (
+      event instanceof RunRawModelStreamEvent &&
+      event.data.type === 'output_text_delta'
+    ) {
+      const delta = event.data.delta
+      if (!delta) continue
+      await onChunk(delta)
+    }
+  }
+  await result.completed
+}
+
 export async function runSuggest(params: SuggestParams) {
   ensureApiKey()
   const runner = createRunner()
   const start = Date.now()
+
+  if (params.onStreamChunk) {
+    const streamResult = await withTrace('magiterm.suggest', async () =>
+      runner.run(
+        magitermSuggest,
+        buildConversationMessages(params.commandHistory, params.goal),
+        { context: buildContext(params), stream: true }
+      )
+    )
+
+    await streamRunText(streamResult, params.onStreamChunk)
+
+    const usage = streamResult.rawResponses.at(-1)?.usage
+    return createAgentRunResult(streamResult.finalOutput, usage, Date.now() - start)
+  }
 
   const result = await withTrace('magiterm.suggest', async () =>
     runner.run(
@@ -367,6 +439,21 @@ export async function runExplain(params: ExplainParams) {
   ensureApiKey()
   const runner = createRunner()
   const start = Date.now()
+
+  if (params.onStreamChunk) {
+    const streamResult = await withTrace('magiterm.explain', async () =>
+      runner.run(
+        magitermExplain,
+        buildConversationMessages(params.commandHistory, params.command),
+        { context: buildContext(params), stream: true }
+      )
+    )
+
+    await streamRunText(streamResult, params.onStreamChunk)
+
+    const usage = streamResult.rawResponses.at(-1)?.usage
+    return createAgentRunResult(streamResult.finalOutput, usage, Date.now() - start)
+  }
 
   const result = await withTrace('magiterm.explain', async () =>
     runner.run(
